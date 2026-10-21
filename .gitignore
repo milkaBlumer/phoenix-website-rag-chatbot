@@ -18,6 +18,7 @@ data/embedded/
 data/state/
 data/eval/retrieval_results.json
 *.log
+הנחיות האתגר - הפניקס (PDF).pdf
 
 # Frontend
 node_modules/
