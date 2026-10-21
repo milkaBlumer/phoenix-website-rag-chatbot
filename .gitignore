@@ -1,0 +1,25 @@
+# Secrets and local environment
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local data and generated artifacts
+data/raw/
+data/chunks/
+data/embedded/
+data/state/
+data/eval/retrieval_results.json
+*.log
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/coverage/

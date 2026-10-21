@@ -1,0 +1,50 @@
+:root {
+  font-family: "Heebo", "Arial", sans-serif;
+  color: #302e3e;
+  background: #f8f8fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  font-optical-sizing: auto;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #f8f8fb;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(105, 87, 205, 0.35);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #dfdcff;
+  color: #25233a;
+}
