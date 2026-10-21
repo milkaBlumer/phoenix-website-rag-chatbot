@@ -69,7 +69,8 @@ function App() {
           <span className="brand__mark" aria-hidden="true">
             <svg viewBox="0 0 40 40">
               <path d="M20 3 34 8v11c0 9-5.6 14.5-14 18-8.4-3.5-14-9-14-18V8l14-5Z" />
-              <path d="M12.5 20.5 18 26l10-12" />
+              <path d="M11.5 14.5a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4H19l-5 4v-4.2a4 4 0 0 1-2.5-3.8v-5Z" />
+              <path d="M17 17h.01m3.5 0h.01m3.5 0h.01" />
             </svg>
           </span>
           <span className="brand__text">
