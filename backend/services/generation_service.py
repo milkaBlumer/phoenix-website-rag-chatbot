@@ -19,6 +19,19 @@ DEFAULT_MODEL = "gemini-2.5-flash"
 NO_ANSWER = "לא מצאתי מידע מתאים באתר כדי לענות על השאלה."
 
 
+def _describe_error(error: BaseException) -> dict[str, Any]:
+    """Summarize a provider error (type, HTTP status, truncated message) for logs."""
+    response = getattr(error, "response", None)
+    status = getattr(error, "status_code", None) or getattr(error, "code", None)
+    status = status if isinstance(status, int) else getattr(response, "status_code", None)
+    detail = getattr(response, "text", None) or str(error)
+    return {
+        "error_type": type(error).__name__,
+        "upstream_status": status if isinstance(status, int) else None,
+        "error_detail": str(detail)[:500],
+    }
+
+
 @dataclass(frozen=True)
 class GenerationSettings:
     """Gemini generation model and answer-safety configuration."""
@@ -92,10 +105,11 @@ class GenerationService:
         except Exception as primary_error:
             if self.backup_client is None:
                 raise
-            logger.warning("Gemini generation failed; using OpenRouter backup: %r", primary_error)
+            logger.warning("gemini_failed", extra={"provider": "gemini", **_describe_error(primary_error)})
             try:
                 return retry_transient(self.backup_client.generate_content)(contents=prompt)
             except Exception as backup_error:
+                logger.error("openrouter_failed", extra={"provider": "openrouter", **_describe_error(backup_error)})
                 raise RuntimeError("Gemini and the configured backup model are unavailable.") from backup_error
 
     @staticmethod

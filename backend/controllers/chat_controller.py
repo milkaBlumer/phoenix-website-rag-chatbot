@@ -47,7 +47,14 @@ def chat(payload: ChatRequest, request: Request) -> ChatResponse:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
         error_type, upstream_status = _root_cause(exc)
-        logger.exception("chat_failed", extra={"error_type": error_type, "upstream_status": upstream_status})
+        logger.exception(
+            "chat_failed",
+            extra={
+                "error_type": error_type,
+                "upstream_status": upstream_status,
+                "error_detail": str(exc.__cause__ or exc)[:500],
+            },
+        )
         if is_quota_exhausted(exc) or upstream_status == 429:
             status_code, code = status.HTTP_429_TOO_MANY_REQUESTS, "quota_exceeded"
         elif isinstance(exc, RuntimeError):
