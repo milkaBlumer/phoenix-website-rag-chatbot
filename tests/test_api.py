@@ -14,6 +14,35 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_cors_allows_deployed_frontend_preflight() -> None:
+    response = TestClient(app).options(
+        "/chat",
+        headers={
+            "Origin": "https://phoenix-website-rag-chatbot.vercel.app",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "https://phoenix-website-rag-chatbot.vercel.app"
+    )
+
+
+def test_cors_does_not_allow_other_origins() -> None:
+    response = TestClient(app).options(
+        "/chat",
+        headers={
+            "Origin": "https://example.com",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert "access-control-allow-origin" not in response.headers
+
+
 def test_chat_endpoint_returns_answer_and_citations(monkeypatch) -> None:
     service = SimpleNamespace(
         chat=lambda question, history: {

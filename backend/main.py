@@ -6,6 +6,7 @@ import logging
 from time import perf_counter
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.controllers.chat_controller import router as chat_router
 from backend.utils.structured_logging import configure_logging
@@ -17,6 +18,12 @@ app = FastAPI(
     title="Hebrew RAG Chatbot API",
     description="A retrieval-augmented chatbot API that answers using its source website.",
     version="0.1.0",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://phoenix-website-rag-chatbot.vercel.app"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 app.include_router(chat_router)
 
