@@ -31,6 +31,49 @@ def test_embedding_service_batches_documents_and_checks_dimensions() -> None:
     assert all(call["config"].task_type == "RETRIEVAL_DOCUMENT" for call in calls)
 
 
+def test_embed_query_caches_repeated_questions() -> None:
+    calls: list[dict] = []
+
+    def embed_content(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(embeddings=[SimpleNamespace(values=[0.1, 0.2, 0.3])])
+
+    service = EmbeddingService(
+        client=SimpleNamespace(models=SimpleNamespace(embed_content=embed_content)),
+        settings=EmbeddingSettings(api_key="test-key", model="test-model", output_dimensionality=3),
+    )
+
+    first = service.embed_query("שאלה")
+    second = service.embed_query("  שאלה ")
+
+    assert first == second
+    assert len(calls) == 1
+
+
+def test_chat_service_caches_answers_only_without_history() -> None:
+    from backend.services.chat_service import ChatService
+
+    generated: list[str] = []
+
+    def generate(question, _sources):
+        generated.append(question)
+        return {"answer": "תשובה", "citations": []}
+
+    service = ChatService(
+        retrieval_service=SimpleNamespace(retrieve=lambda _q: []),
+        generation_service=SimpleNamespace(
+            generate=generate, rewrite_question=lambda question, _history: question
+        ),
+    )
+
+    service.chat("מה השעות?")
+    service.chat("מה השעות?")
+    assert len(generated) == 1
+
+    service.chat("מה השעות?", [{"role": "user", "content": "היי"}])
+    assert len(generated) == 2
+
+
 def test_embedding_service_rejects_empty_and_malformed_vectors() -> None:
     service = EmbeddingService(
         client=SimpleNamespace(

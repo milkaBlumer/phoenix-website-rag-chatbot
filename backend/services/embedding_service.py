@@ -6,9 +6,11 @@ import argparse
 import json
 import os
 import sys
+from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from google import genai
@@ -20,6 +22,7 @@ from backend.utils.retry import retry_transient
 DEFAULT_MODEL = "gemini-embedding-001"
 DEFAULT_OUTPUT_DIMENSIONALITY = 768
 DEFAULT_BATCH_SIZE = 100
+QUERY_CACHE_SIZE = 256
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT_PATH = ROOT / "data" / "chunks" / "chunks.json"
 DEFAULT_OUTPUT_PATH = ROOT / "data" / "chunks" / "embedded_chunks.json"
@@ -74,6 +77,8 @@ class EmbeddingService:
         self.settings = settings or EmbeddingSettings.from_env()
         self.client = client or genai.Client(api_key=self.settings.api_key)
         self.batch_size = batch_size
+        self._query_cache: OrderedDict[str, list[float]] = OrderedDict()
+        self._cache_lock = Lock()
 
     @property
     def dimensions(self) -> int:
@@ -123,6 +128,13 @@ class EmbeddingService:
         if not text.strip():
             raise ValueError("The query must not be empty or whitespace-only.")
 
+        key = text.strip().casefold()
+        with self._cache_lock:
+            cached = self._query_cache.get(key)
+            if cached is not None:
+                self._query_cache.move_to_end(key)
+                return list(cached)
+
         response = retry_transient(self.client.models.embed_content)(
             model=self.settings.model,
             contents=text,
@@ -139,7 +151,12 @@ class EmbeddingService:
                 f"Gemini returned an embedding with {actual} dimensions; expected "
                 f"{self.settings.output_dimensionality}."
             )
-        return [float(value) for value in values]
+        vector = [float(value) for value in values]
+        with self._cache_lock:
+            self._query_cache[key] = vector
+            if len(self._query_cache) > QUERY_CACHE_SIZE:
+                self._query_cache.popitem(last=False)
+        return list(vector)
 
 
 def main() -> int:
