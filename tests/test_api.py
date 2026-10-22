@@ -80,3 +80,30 @@ def test_chat_endpoint_hides_dependency_error_details(monkeypatch) -> None:
 
     assert response.status_code == 503
     assert "secret upstream" not in response.text
+
+
+def test_chat_endpoint_reports_quota_errors_as_429(monkeypatch) -> None:
+    class QuotaError(Exception):
+        code = 429
+
+    def fail(_question, _history):
+        raise QuotaError("RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(app.state, "chat_service", SimpleNamespace(chat=fail), raising=False)
+
+    response = TestClient(app).post("/chat", json={"question": "שאלה"})
+
+    assert response.status_code == 429
+    assert response.json()["detail"]["code"] == "quota_exceeded"
+
+
+def test_chat_endpoint_reports_unexpected_errors_as_502(monkeypatch) -> None:
+    def fail(_question, _history):
+        raise ConnectionError("db down")
+
+    monkeypatch.setattr(app.state, "chat_service", SimpleNamespace(chat=fail), raising=False)
+
+    response = TestClient(app).post("/chat", json={"question": "שאלה"})
+
+    assert response.status_code == 502
+    assert response.json()["detail"]["error_type"] == "ConnectionError"

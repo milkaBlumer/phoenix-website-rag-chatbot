@@ -21,6 +21,9 @@ function getErrorMessage(error: unknown): string {
     if (error.status === 400 || error.status === 422) {
       return "נראה שהשאלה לא נשלחה בצורה תקינה. כדאי לבדוק אותה ולנסות שוב.";
     }
+    if (error.status === 429) {
+      return "הגענו למגבלת השימוש של שירות ה-AI. אפשר לנסות שוב בעוד דקה.";
+    }
     if (error.status === 502 || error.status === 503) {
       return "השירות לא זמין כרגע. אפשר לנסות שוב בעוד רגע.";
     }
