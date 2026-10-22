@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -11,6 +12,8 @@ from google import genai
 
 from backend.check_setup import read_local_env
 from backend.utils.retry import retry_transient
+
+logger = logging.getLogger("backend.generation")
 
 DEFAULT_MODEL = "gemini-2.5-flash"
 NO_ANSWER = "לא מצאתי מידע מתאים באתר כדי לענות על השאלה."
@@ -80,15 +83,16 @@ class GenerationService:
         return False
 
     def _generate_content(self, prompt: str) -> Any:
-        """Call Gemini, falling back to OpenRouter only for transient provider failures."""
+        """Call Gemini, falling back to OpenRouter on any Gemini failure."""
         try:
             return retry_transient(self.client.models.generate_content)(
                 model=self.settings.model,
                 contents=prompt,
             )
         except Exception as primary_error:
-            if self.backup_client is None or not self._is_transient_provider_error(primary_error):
+            if self.backup_client is None:
                 raise
+            logger.warning("Gemini generation failed; using OpenRouter backup: %r", primary_error)
             try:
                 return retry_transient(self.backup_client.generate_content)(contents=prompt)
             except Exception as backup_error:

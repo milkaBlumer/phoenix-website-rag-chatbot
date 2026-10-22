@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -9,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from backend.models.schemas import ChatRequest, ChatResponse
 
 router = APIRouter()
+logger = logging.getLogger("backend.api")
 
 
 def get_chat_service(request: Request) -> Any:
@@ -34,11 +36,13 @@ def chat(payload: ChatRequest, request: Request) -> ChatResponse:
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except RuntimeError as exc:
+        logger.exception("chat_runtime_error")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="The chatbot could not complete the request. Please try again later.",
         ) from exc
     except Exception as exc:
+        logger.exception("chat_failed")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="A required AI or data service is temporarily unavailable.",

@@ -46,7 +46,7 @@ def test_falls_back_after_transient_gemini_server_failure() -> None:
     assert len(backup_calls) == 1
 
 
-def test_does_not_fallback_for_permanent_gemini_error() -> None:
+def test_falls_back_for_any_gemini_error() -> None:
     backup_calls: list[str] = []
 
     def primary(**_kwargs):
@@ -54,13 +54,13 @@ def test_does_not_fallback_for_permanent_gemini_error() -> None:
 
     def backup(*, contents: str):
         backup_calls.append(contents)
-        return SimpleNamespace(text="לא צפוי")
+        return SimpleNamespace(text="תשובה מהגיבוי")
 
     service = _generation_service(primary, backup)
-    with pytest.raises(ProviderError):
-        service.generate("שאלה", [{"url": "https://example.com", "text": "תוכן"}])
+    result = service.generate("שאלה", [{"url": "https://example.com", "text": "תוכן"}])
 
-    assert backup_calls == []
+    assert result["answer"] == "תשובה מהגיבוי"
+    assert len(backup_calls) == 1
 
 
 def test_safety_policy_bypasses_retrieval_and_generation() -> None:

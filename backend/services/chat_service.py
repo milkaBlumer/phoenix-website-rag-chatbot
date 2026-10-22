@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from backend.models.schemas import ChatMessage
 from backend.services.safety_policy import assess_question
+
+logger = logging.getLogger("backend.chat")
 
 MAX_HISTORY_MESSAGES = 6
 MAX_HISTORY_CHARS = 12_000
@@ -65,13 +68,17 @@ class ChatService:
             return {"answer": safety_decision.answer, "citations": []}
         history_messages = self._normalize_history(history or [])
         if history_messages:
-            retrieval_question = self.generation_service.rewrite_question(
-                question,
-                [
-                    {"role": message.role, "content": message.content}
-                    for message in history_messages
-                ],
-            )
+            try:
+                retrieval_question = self.generation_service.rewrite_question(
+                    question,
+                    [
+                        {"role": message.role, "content": message.content}
+                        for message in history_messages
+                    ],
+                )
+            except Exception:
+                logger.warning("rewrite_question failed; using original question", exc_info=True)
+                retrieval_question = question
         else:
             retrieval_question = question
         sources = self.retrieval_service.retrieve(retrieval_question)
