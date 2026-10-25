@@ -75,6 +75,7 @@ class OpenRouterClient:
             json={
                 "model": model or self.settings.model,
                 "messages": [{"role": "user", "content": contents}],
+                "max_tokens": 2000,
             },
             timeout=self.timeout,
         )
