@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 import type { ChatItem } from "../hooks/useChat";
 import { CitationList } from "./CitationList";
 
@@ -65,8 +66,15 @@ export function MessageList({ messages, pendingQuestion, isPending }: MessageLis
                 {message.role === "assistant" && (
                   <span className="message__author">העוזר הדיגיטלי</span>
                 )}
-                <div className="message__bubble" dir="auto">
-                  {message.content}
+                <div
+                  className={`message__bubble${message.role === "assistant" ? " message__bubble--markdown" : ""}`}
+                  dir="auto"
+                >
+                  {message.role === "assistant" ? (
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  ) : (
+                    message.content
+                  )}
                 </div>
                 {message.role === "assistant" && message.citations && (
                   <CitationList citations={message.citations} />
